@@ -1,9 +1,15 @@
 package ast
 
-import "funscript/token"
+import (
+	"bytes"
+	"fmt"
+	"funscript/token"
+	"strings"
+)
 
 type Node interface {
 	TokenLiteral() string
+	String() string
 }
 
 type Statement interface {
@@ -28,27 +34,47 @@ func (p *Program) TokenLiteral() string {
 	}
 }
 
+func (p *Program) String() string {
+	var out bytes.Buffer
+	for _, s := range p.Statements {
+		out.WriteString(s.String())
+	}
+	return out.String()
+}
+
+type BlockStatement struct {
+	Token      token.Token
+	Statements []Statement
+}
+
+func (bs *BlockStatement) statementNode()       {}
+func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
+func (bs *BlockStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString("{")
+	for _, s := range bs.Statements {
+		out.WriteString(s.String())
+	}
+	out.WriteString("}")
+	return out.String()
+}
+
 type LetStatement struct {
 	Token token.Token
 	Name  *Identifier
 	Value Expression
 }
 
-func (ls *LetStatement) statementNode() {}
-
-func (ls *LetStatement) TokenLiteral() string {
-	return ls.Token.Literal
-}
-
-type Identifier struct {
-	Token token.Token
-	Value string
-}
-
-func (i *Identifier) expressionNode() {}
-
-func (i *Identifier) TokenLiteral() string {
-	return i.Token.Literal
+func (ls *LetStatement) statementNode()       {}
+func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }
+func (ls *LetStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString(fmt.Sprintf("%s %s = ", ls.TokenLiteral(), ls.Name.String()))
+	if ls.Value != nil {
+		out.WriteString(ls.Value.String())
+	}
+	out.WriteString(";")
+	return out.String()
 }
 
 type ReturnStatement struct {
@@ -56,8 +82,131 @@ type ReturnStatement struct {
 	ReturnValue Expression
 }
 
-func (rs *ReturnStatement) statementNode() {}
+func (rs *ReturnStatement) statementNode()       {}
+func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
+func (rs *ReturnStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString(rs.TokenLiteral() + " ")
+	if rs.ReturnValue != nil {
+		out.WriteString(rs.ReturnValue.String())
+	}
+	out.WriteString(";")
+	return out.String()
+}
 
-func (rs *ReturnStatement) TokenLiteral() string {
-	return rs.Token.Literal
+type ExpressionStatement struct {
+	Token      token.Token
+	Expression Expression
+}
+
+func (es *ExpressionStatement) statementNode()       {}
+func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
+func (es *ExpressionStatement) String() string {
+	if es.Expression != nil {
+		return es.Expression.String()
+	} else {
+		return ""
+	}
+}
+
+type Identifier struct {
+	Token token.Token
+	Value string
+}
+
+func (i *Identifier) expressionNode()      {}
+func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
+func (i *Identifier) String() string       { return i.Value }
+
+type IntegerLiteral struct {
+	Token token.Token
+	Value int64
+}
+
+func (il *IntegerLiteral) expressionNode()      {}
+func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
+func (il *IntegerLiteral) String() string       { return il.Token.Literal }
+
+type Boolean struct {
+	Token token.Token
+	Value bool
+}
+
+func (b *Boolean) expressionNode()      {}
+func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
+func (b *Boolean) String() string       { return b.Token.Literal }
+
+type PrefixExpression struct {
+	Token    token.Token
+	Operator string
+	Right    Expression
+}
+
+func (pe *PrefixExpression) expressionNode()      {}
+func (pe *PrefixExpression) TokenLiteral() string { return pe.Token.Literal }
+func (pe *PrefixExpression) String() string {
+	return fmt.Sprintf("(%s%s)", pe.Operator, pe.Right.String())
+}
+
+type InfixExpression struct {
+	Token    token.Token
+	Operator string
+	Left     Expression
+	Right    Expression
+}
+
+func (ie *InfixExpression) expressionNode()      {}
+func (ie *InfixExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *InfixExpression) String() string {
+	return fmt.Sprintf("(%s %s %s)", ie.Left, ie.Operator, ie.Right)
+}
+
+type IfExpression struct {
+	Token       token.Token
+	Condition   Expression
+	Consequence Statement
+	Alternative Statement
+}
+
+func (ie *IfExpression) expressionNode()      {}
+func (ie *IfExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *IfExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString(fmt.Sprintf("if (%s) %s", ie.Condition.String(), ie.Consequence.String()))
+	if ie.Alternative != nil {
+		out.WriteString(fmt.Sprintf(" else %s", ie.Alternative.String()))
+	}
+	return out.String()
+}
+
+type FunctionLiteral struct {
+	Token      token.Token
+	Parameters []*Identifier
+	Body       Statement
+}
+
+func (fl *FunctionLiteral) expressionNode()      {}
+func (fl *FunctionLiteral) TokenLiteral() string { return fl.Token.Literal }
+func (fl *FunctionLiteral) String() string {
+	var params []string
+	for _, p := range fl.Parameters {
+		params = append(params, p.String())
+	}
+	return fmt.Sprintf("%s(%s) %s", fl.TokenLiteral(), strings.Join(params, ", "), fl.Body.String())
+}
+
+type CallExpression struct {
+	Token     token.Token
+	Function  Expression
+	Arguments []Expression
+}
+
+func (ce *CallExpression) expressionNode()      {}
+func (ce *CallExpression) TokenLiteral() string { return ce.Token.Literal }
+func (ce *CallExpression) String() string {
+	var args []string
+	for _, p := range ce.Arguments {
+		args = append(args, p.String())
+	}
+	return fmt.Sprintf("%s(%s)", ce.Function.String(), strings.Join(args, ", "))
 }
