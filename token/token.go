@@ -34,6 +34,8 @@ const (
 
 type TokenType string
 
+// TODO: Add positional information to Token
+
 type Token struct {
 	Type    TokenType
 	Literal string
