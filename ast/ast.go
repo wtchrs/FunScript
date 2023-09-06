@@ -51,11 +51,13 @@ func (bs *BlockStatement) statementNode()       {}
 func (bs *BlockStatement) TokenLiteral() string { return bs.Token.Literal }
 func (bs *BlockStatement) String() string {
 	var out bytes.Buffer
-	out.WriteString("{")
+
+	out.WriteString("{\n")
 	for _, s := range bs.Statements {
 		out.WriteString(s.String())
 	}
-	out.WriteString("}")
+	out.WriteString("\n}")
+
 	return out.String()
 }
 
@@ -182,7 +184,7 @@ func (ie *IfExpression) String() string {
 type FunctionLiteral struct {
 	Token      token.Token
 	Parameters []*Identifier
-	Body       Statement
+	Body       *BlockStatement
 }
 
 func (fl *FunctionLiteral) expressionNode()      {}

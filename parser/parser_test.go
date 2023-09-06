@@ -579,18 +579,13 @@ func TestFunctionLiteralParsing(t *testing.T) {
 	testLiteralExpression(t, function.Parameters[0], "x")
 	testLiteralExpression(t, function.Parameters[1], "y")
 
-	blockStmt, ok := function.Body.(*ast.BlockStatement)
-	if !ok {
-		t.Fatalf("function.Body is not ast.BlockStatement. got=%T", function.Body)
+	if len(function.Body.Statements) != 1 {
+		t.Errorf("function.Body.Statements has no 1 statements. got=%d", len(function.Body.Statements))
 	}
 
-	if len(blockStmt.Statements) != 1 {
-		t.Errorf("function.Body.Statements has no 1 statements. got=%d", len(blockStmt.Statements))
-	}
-
-	bodyStmt, ok := blockStmt.Statements[0].(*ast.ExpressionStatement)
+	bodyStmt, ok := function.Body.Statements[0].(*ast.ExpressionStatement)
 	if !ok {
-		t.Errorf("function.Body.Statements[0] is not ast.ExpressionStatement. got=%T", blockStmt.Statements[0])
+		t.Errorf("function.Body.Statements[0] is not ast.ExpressionStatement. got=%T", function.Body.Statements[0])
 	}
 
 	testInfixExpression(t, bodyStmt.Expression, "+", "x", "y")
