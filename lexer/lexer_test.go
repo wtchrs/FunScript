@@ -30,6 +30,18 @@ if (5 < 10) {
 
 10 == 10;
 10!=9;
+"foo
+bar"
+"foobar"
+"foo bar"
+"\n"
+"\r"
+"\t"
+"\""
+"\'"
+"\\"
+"\x"
+""
 `
 
 	tests := []struct {
@@ -112,6 +124,19 @@ if (5 < 10) {
 		{token.NOT_EQ, "!="},
 		{token.INT, "9"},
 		{token.SEMICOLON, ";"},
+		{token.ILLEGAL, "\"foo\n"},
+		{token.IDENT, "bar"},
+		{token.ILLEGAL, "\"\n"},
+		{token.STRING, "foobar"},
+		{token.STRING, "foo bar"},
+		{token.STRING, "\n"},
+		{token.STRING, "\r"},
+		{token.STRING, "\t"},
+		{token.STRING, "\""},
+		{token.STRING, "'"},
+		{token.STRING, "\\"},
+		{token.ILLEGAL, "\"\\x\""},
+		{token.STRING, ""},
 		{token.EOF, ""},
 	}
 

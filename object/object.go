@@ -11,10 +11,12 @@ type ObjectType string
 
 const (
 	INTEGER_OBJ      = "INTEGER"
+	STRING_OBJ       = "STRING"
 	BOOLEAN_OBJ      = "BOOLEAN"
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	FUNCTION_OBJ     = "FUNCTION"
+	BUILTIN_OBJ      = "BUILTIN"
 	ERROR_OBJ        = "ERROR"
 )
 
@@ -29,6 +31,13 @@ type Integer struct {
 
 func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
 func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
+
+type String struct {
+	Value string
+}
+
+func (s *String) Type() ObjectType { return STRING_OBJ }
+func (s *String) Inspect() string  { return s.Value }
 
 type Boolean struct {
 	Value bool
@@ -71,6 +80,15 @@ func (f *Function) Inspect() string {
 
 	return out.String()
 }
+
+type BuiltinFunction func(args ...Object) Object
+
+type Builtin struct {
+	Fn BuiltinFunction
+}
+
+func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
+func (b *Builtin) Inspect() string  { return "builtin function" }
 
 // TODO: Add stacktrace to Error
 

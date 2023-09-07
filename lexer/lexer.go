@@ -1,8 +1,20 @@
 package lexer
 
 import (
+	"errors"
 	"funscript/token"
+	"strings"
 )
+
+var escapeMap = map[string]byte{
+	"\\n":  '\n',
+	"\\r":  '\r',
+	"\\t":  '\t',
+	"\\v":  '\v',
+	"\\\"": '"',
+	"\\'":  '\'',
+	"\\\\": '\\',
+}
 
 type Lexer struct {
 	input        string
@@ -15,52 +27,6 @@ func New(input string) *Lexer {
 	l := &Lexer{input: input}
 	l.readChar()
 	return l
-}
-
-func (l *Lexer) readChar() {
-	if l.readPosition >= len(l.input) {
-		l.ch = 0
-	} else {
-		l.ch = l.input[l.readPosition]
-	}
-	l.position = l.readPosition
-	l.readPosition += 1
-}
-
-func (l *Lexer) peekChar() byte {
-	if l.readPosition >= len(l.input) {
-		return 0
-	} else {
-		return l.input[l.readPosition]
-	}
-}
-
-func (l *Lexer) readIdentifier() string {
-	position := l.position
-	for isLetter(l.ch) {
-		l.readChar()
-	}
-	return l.input[position:l.position]
-}
-
-func (l *Lexer) readNumber() string {
-	position := l.position
-	for isDigit(l.ch) {
-		l.readChar()
-	}
-	return l.input[position:l.position]
-}
-
-func (l *Lexer) readTwoCharToken() string {
-	ch := l.ch
-	l.readChar()
-	return string(ch) + string(l.ch)
-}
-
-func (l *Lexer) skipWhitespace() {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
-		l.readChar()
-	}
 }
 
 func (l *Lexer) NextToken() token.Token {
@@ -117,6 +83,8 @@ func (l *Lexer) NextToken() token.Token {
 		tok = token.New(token.LBRACE, l.ch)
 	case '}':
 		tok = token.New(token.RBRACE, l.ch)
+	case '"':
+		tok = l.readStringToken()
 	case 0:
 		tok.Type = token.EOF
 		tok.Literal = ""
@@ -136,6 +104,93 @@ func (l *Lexer) NextToken() token.Token {
 
 	l.readChar()
 	return tok
+}
+
+func (l *Lexer) readChar() {
+	if l.readPosition >= len(l.input) {
+		l.ch = 0
+	} else {
+		l.ch = l.input[l.readPosition]
+	}
+	l.position = l.readPosition
+	l.readPosition += 1
+}
+
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	} else {
+		return l.input[l.readPosition]
+	}
+}
+
+func (l *Lexer) readIdentifier() string {
+	position := l.position
+	for isLetter(l.ch) {
+		l.readChar()
+	}
+	return l.input[position:l.position]
+}
+
+func (l *Lexer) readNumber() string {
+	position := l.position
+	for isDigit(l.ch) {
+		l.readChar()
+	}
+	return l.input[position:l.position]
+}
+
+func (l *Lexer) readStringToken() token.Token {
+	position := l.position + 1
+	escape := false
+	for {
+		l.readChar()
+		if !escape && l.ch == '"' {
+			break
+		}
+		if l.ch == 0 || l.ch == '\n' || l.ch == '\r' {
+			return token.Token{Type: token.ILLEGAL, Literal: l.input[position-1 : l.position+1]}
+		}
+		escape = !escape && l.ch == '\\'
+	}
+	s, err := unescapeString(l.input[position:l.position])
+	if err != nil {
+		return token.Token{Type: token.ILLEGAL, Literal: l.input[position-1 : l.position+1]}
+	}
+	return token.Token{Type: token.STRING, Literal: s}
+}
+
+func (l *Lexer) readTwoCharToken() string {
+	ch := l.ch
+	l.readChar()
+	return string(ch) + string(l.ch)
+}
+
+func (l *Lexer) skipWhitespace() {
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+		l.readChar()
+	}
+}
+
+func unescapeString(input string) (string, error) {
+	var out strings.Builder
+	for i := 0; i < len(input); i++ {
+		if input[i] == '\\' {
+			if i+1 < len(input) {
+				if replacement, ok := escapeMap[input[i:i+2]]; ok {
+					out.WriteByte(replacement)
+					i++
+				} else {
+					return out.String(), errors.New("Unknown escape sequence: " + string(replacement))
+				}
+			} else {
+				return out.String(), errors.New("Incomplete escape sequence: " + input[i:])
+			}
+		} else {
+			out.WriteByte(input[i])
+		}
+	}
+	return out.String(), nil
 }
 
 func isLetter(ch byte) bool {
