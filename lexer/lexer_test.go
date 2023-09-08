@@ -10,6 +10,8 @@ func TestNextToken(t *testing.T) {
 	input := `
 let five = 5;
 let ten = 10;
+let arr = ["one", "two", "three"];
+arr[1];
 
 let add = fn(x, y) {
 	x + y;
@@ -57,6 +59,22 @@ bar"
 		{token.IDENT, "ten"},
 		{token.ASSIGN, "="},
 		{token.INT, "10"},
+		{token.SEMICOLON, ";"},
+		{token.LET, "let"},
+		{token.IDENT, "arr"},
+		{token.ASSIGN, "="},
+		{token.LBRACKET, "["},
+		{token.STRING, "one"},
+		{token.COMMA, ","},
+		{token.STRING, "two"},
+		{token.COMMA, ","},
+		{token.STRING, "three"},
+		{token.RBRACKET, "]"},
+		{token.SEMICOLON, ";"},
+		{token.IDENT, "arr"},
+		{token.LBRACKET, "["},
+		{token.INT, "1"},
+		{token.RBRACKET, "]"},
 		{token.SEMICOLON, ";"},
 		{token.LET, "let"},
 		{token.IDENT, "add"},

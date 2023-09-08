@@ -16,6 +16,7 @@ const (
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	FUNCTION_OBJ     = "FUNCTION"
+	ARRAY_OBJ        = "ARRAY"
 	BUILTIN_OBJ      = "BUILTIN"
 	ERROR_OBJ        = "ERROR"
 )
@@ -79,6 +80,21 @@ func (f *Function) Inspect() string {
 	out.WriteString(f.Body.String())
 
 	return out.String()
+}
+
+type Array struct {
+	Elements []Object
+}
+
+func (a *Array) Type() ObjectType { return ARRAY_OBJ }
+func (a *Array) Inspect() string {
+	var elements []string
+
+	for _, e := range a.Elements {
+		elements = append(elements, e.Inspect())
+	}
+
+	return fmt.Sprintf("[%s]", strings.Join(elements, ", "))
 }
 
 type BuiltinFunction func(args ...Object) Object
