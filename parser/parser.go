@@ -64,6 +64,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.TRUE, p.parseBoolean)
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
+	p.registerPrefix(token.LBRACE, p.parseHashLiteral)
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
@@ -128,8 +129,8 @@ func (p *Parser) peekError(t token.TokenType) {
 
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
-	case token.LBRACE:
-		return p.parseBlockStatement()
+	//case token.LBRACE:
+	//	return p.parseBlockStatement()
 	case token.LET:
 		return p.parseLetStatement()
 	case token.RETURN:
@@ -255,6 +256,34 @@ func (p *Parser) parseArrayLiteral() ast.Expression {
 	return lit
 }
 
+func (p *Parser) parseHashLiteral() ast.Expression {
+	hash := &ast.HashLiteral{Token: p.curToken}
+	hash.Pairs = make(map[ast.Expression]ast.Expression)
+
+	for !p.peekTokenIs(token.RBRACE) && !p.peekTokenIs(token.EOF) {
+		p.nextToken()
+
+		key := p.parseExpression(LOWEST)
+
+		if !p.expectPeek(token.COLON) {
+			return nil
+		}
+
+		p.nextToken()
+		hash.Pairs[key] = p.parseExpression(LOWEST)
+
+		if p.peekTokenIs(token.COMMA) {
+			p.nextToken()
+		}
+	}
+
+	if !p.expectPeek(token.RBRACE) {
+		return nil
+	}
+
+	return hash
+}
+
 func (p *Parser) parsePrefixExpression() ast.Expression {
 	expression := &ast.PrefixExpression{
 		Token:    p.curToken,
@@ -307,12 +336,21 @@ func (p *Parser) parseIfExpression() ast.Expression {
 	}
 
 	p.nextToken()
-	expression.Consequence = p.parseStatement()
+	if p.curTokenIs(token.LBRACE) {
+		expression.Consequence = p.parseBlockStatement()
+	} else {
+		expression.Consequence = p.parseStatement()
+	}
 
 	if p.peekTokenIs(token.ELSE) {
 		p.nextToken()
 		p.nextToken()
-		expression.Alternative = p.parseStatement()
+
+		if p.curTokenIs(token.LBRACE) {
+			expression.Alternative = p.parseBlockStatement()
+		} else {
+			expression.Alternative = p.parseStatement()
+		}
 	}
 
 	return expression

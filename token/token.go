@@ -24,6 +24,7 @@ const (
 	RBRACE    = "}"
 	LBRACKET  = "["
 	RBRACKET  = "]"
+	COLON     = ":"
 	EQ        = "=="
 	NOT_EQ    = "!="
 	FUNCTION  = "FUNCTION"

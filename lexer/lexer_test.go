@@ -44,6 +44,7 @@ bar"
 "\\"
 "\x"
 ""
+{"foo": "bar"}
 `
 
 	tests := []struct {
@@ -155,6 +156,11 @@ bar"
 		{token.STRING, "\\"},
 		{token.ILLEGAL, "\"\\x\""},
 		{token.STRING, ""},
+		{token.LBRACE, "{"},
+		{token.STRING, "foo"},
+		{token.COLON, ":"},
+		{token.STRING, "bar"},
+		{token.RBRACE, "}"},
 		{token.EOF, ""},
 	}
 
