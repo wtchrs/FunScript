@@ -1,6 +1,9 @@
 package evaluator
 
-import "funscript/object"
+import (
+	"bytes"
+	"funscript/object"
+)
 
 var builtins = map[string]*object.Builtin{
 	"len": {
@@ -100,6 +103,38 @@ var builtins = map[string]*object.Builtin{
 			copy(newElem, arr.Elements)
 			newElem[length] = args[1]
 			return &object.Array{Elements: newElem}
+		},
+	},
+
+	"print": {
+		Fn: func(args ...object.Object) object.Object {
+			var out bytes.Buffer
+
+			for i, arg := range args {
+				out.WriteString(arg.Inspect())
+				if i != len(args)-1 {
+					out.WriteByte(' ')
+				}
+			}
+
+			print(out.String())
+			return NULL
+		},
+	},
+
+	"println": {
+		Fn: func(args ...object.Object) object.Object {
+			var out bytes.Buffer
+
+			for i, arg := range args {
+				out.WriteString(arg.Inspect())
+				if i != len(args)-1 {
+					out.WriteByte(' ')
+				}
+			}
+
+			println(out.String())
+			return NULL
 		},
 	},
 }
